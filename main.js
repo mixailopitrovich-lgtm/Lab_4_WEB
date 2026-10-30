@@ -28,7 +28,24 @@ program
       return;
       }
 
-      send(res, 200, { message: 'Сервер працює'});
+      fs.readFile(options.input, 'utf-8', (err, text) => {
+  if (err) {
+    send(res, 500, { error: 'Не вдалося прочитати файл даних' });
+    return;
+  }
+
+  let records;
+  try {
+    records = JSON.parse(text);
+  } catch (parseError) {
+    send(res, 500, { error: 'Файл даних пошкоджено' });
+    return;
+  }
+
+  send(res, 200, { count: records.length });
+
+  
+});
      });
      server.listen(Number(options.port), options.host, () => {
       console.log(`Сервер запущено: http://${options.host}:${options.port}`);
