@@ -28,10 +28,21 @@ program
       return;
       }
 
+      const minRainfallRaw = url.searchParams.get('min_rainfall');
+      let minRainfall = null;
+
+      if (minRainfallRaw !== null) {
+       minRainfall = Number(minRainfallRaw);
+     if (minRainfallRaw.trim() === '' || !Number.isFinite(minRainfall)) {
+        send(res, 400, { error: 'Параметр min_rainfall має бути числом' });
+      return;
+  }
+}
+
       fs.readFile(options.input, 'utf-8', (err, text) => {
-  if (err) {
-    send(res, 500, { error: 'Не вдалося прочитати файл даних' });
-    return;
+        if (err) {
+           send(res, 500, { error: 'Не вдалося прочитати файл даних' });
+        return;
   }
 
   let records;
@@ -42,9 +53,15 @@ program
     return;
   }
 
-  send(res, 200, { count: records.length });
+  let result = records;
 
-  
+    if (minRainfall !== null) {
+       result = result.filter((record) => Number(record.Rainfall) > minRainfall);
+       }
+
+  send(res, 200, { count: result.length });
+
+
 });
      });
      server.listen(Number(options.port), options.host, () => {
