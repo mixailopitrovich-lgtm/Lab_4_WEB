@@ -14,9 +14,26 @@ program
 program.parse();
 const options = program.opts();
 
-function send(res, code, data) {
+function sendRaw(res, code, body) {
   res.writeHead(code, {'Content-Type': 'application/json; charset=utf-8'});
-  res.end(JSON.stringify(data));
+  res.end(body);
+}
+
+function send(res, code, data) {
+  const body = JSON.stringify(data);
+
+  if (!options.output) {
+    sendRaw(res, code, body);
+    return;
+  }
+
+  fs.writeFile(options.output, body, (err) => {
+    if (err) {
+      sendRaw(res, 500, JSON.stringify({ error: 'Не вдалося записати відповідь у файл' }));
+      return;
+    }
+    sendRaw(res, code, body);
+  });
 }
 
 function toNumber(value) {
@@ -59,6 +76,11 @@ function startServer() {
         records = JSON.parse(text);
       } catch (parseError) {
         send(res, 500, { error: 'Файл даних пошкоджено' });
+        return;
+      }
+
+       if (!Array.isArray(records)) {
+        send(res, 500, { error: 'Файл даних має неправильний формат' });
         return;
       }
 
